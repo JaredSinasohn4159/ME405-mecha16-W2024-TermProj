@@ -26,7 +26,7 @@
 
 # TRIGGER
 # Timer 15
-# Signal_pin = E6
+# Signal_pin = E5
 
 """!
 @file main.py
@@ -206,7 +206,7 @@ def pitch_motor_fun():
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac2)
         encoder.set_pos(-30)
         # create controller object
-        con = CLController(0.1, 0, 0, 180)
+        con = CLController(5, 0, 0, 180)
         t3state = 1
         yield t3state
     else:
