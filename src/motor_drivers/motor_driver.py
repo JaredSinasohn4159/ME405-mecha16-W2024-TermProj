@@ -34,8 +34,8 @@ class MotorDriver:
         self.in2pin = in2pin
         self.timer = timer
         self.en_pin.low() #disable the motor (for safety)
-        self.ch1 = self.timer.channel(2, pyb.Timer.PWM, pin=self.in1pin)
-        self.ch2 = self.timer.channel(4, pyb.Timer.PWM, pin=self.in2pin)
+        self.ch1 = self.timer.channel(1, pyb.Timer.PWM, pin=self.in1pin)
+        self.ch2 = self.timer.channel(2, pyb.Timer.PWM, pin=self.in2pin)
         self.ch1.pulse_width_percent(0)
         self.ch2.pulse_width_percent(0)
     
@@ -84,12 +84,12 @@ class MotorDriver:
 
 if __name__ == "__main__":
     # power the motor for five seconds 
-    en_pin =  pyb.Pin(pyb.Pin.board.PG14, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
-    in1pin = pyb.Pin(pyb.Pin.board.PE14, pyb.Pin.OUT_PP)
-    in2pin = pyb.Pin(pyb.Pin.board.PE11, pyb.Pin.OUT_PP)
-    timer = pyb.Timer(3, freq=5000) #setting frequency for motor 
-    motor = MotorDriver(en_pin,in1pin,in2pin,timer,ch1,ch2) #call to the motor class you just made!
-    motor.set_duty_cycle(50) #set duty cycle, in range -100 to 100 (not including 0)
+    en_pin =  pyb.Pin(pyb.Pin.board.D7, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
+    in1pin = pyb.Pin(pyb.Pin.board.D6, pyb.Pin.OUT_PP)
+    in2pin = pyb.Pin(pyb.Pin.board.D5, pyb.Pin.OUT_PP)
+    timer = pyb.Timer(1, freq=5000) #setting frequency for motor 
+    motor = MotorDriver(en_pin,in1pin,in2pin,timer) #call to the motor class you just made!
+    motor.set_duty_cycle(-100) #set duty cycle, in range -100 to 100 (not including 0)
     utime.sleep(5)
     motor.set_duty_cycle(0)
     

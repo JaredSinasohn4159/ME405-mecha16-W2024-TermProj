@@ -122,16 +122,16 @@ class Encoder:
         This method sets the encoder to the desired value in degrees
         @param val - the value to set the encoder to in degrees
         """
-        val_converted = val*self.conversion_factor
+        val_converted = int(val*self.conversion_factor)
         # set the value of the counter to the val converted to encoder count
         self.timer.counter(val_converted)
         # set the value of the encoder of the position within the class
         # to the converted value
-        self.pos = val_coverted
+        self.pos = val_converted
         # set previous value and new value so we don't mess up
         # future calculations
-        self.prev = val_coverted
-        self.new = val_coverted
+        self.prev = val_converted
+        self.new = val_converted
         
         
 if __name__ == "__main__":

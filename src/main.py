@@ -1,4 +1,4 @@
-# YAW
+# YAW A
 # EN_PIN = G12
 
 # Timer 1
@@ -9,7 +9,11 @@
 # Encoder_A = A6
 # Encoder_B = B5
 
-# PITCH
+
+
+
+
+# PITCH B
 # EN_PIN = G14
 
 # Timer 4
@@ -48,6 +52,8 @@ from mlx_cam import MLX_Cam as Cam
 from ulab import numpy as np
 from machine import Pin, I2C
 
+WAIT_TIME = 500
+
 def get_conversion_factor(belt_ratio):
     """!
     This function calculates the conversion of the encoder ticks to degrees of the output axis of the motor.
@@ -79,13 +85,13 @@ def camera_handler_fun():
         t1state = 1
         yield t1state
     else:
-        raise ValueError(f"Invalid State in Task 2.  Current state is {t2state}")
+        raise ValueError(f"Invalid State in Task 1.  Current state is {t1state}")
     while True:
         if t1state == 1:
             while not image:
                 image = camera.get_image_nonblocking()
                 yield t1state
-            im_arr = get_array(image)
+            im_arr = camera.get_array(image)
             t1state = 2
             yield t1state
         elif t1state == 2:
@@ -103,6 +109,8 @@ def camera_handler_fun():
             pitch_angle = 0
             yaw_motor_setpoint.put(yaw_angle)
             pitch_motor_setpoint.put(pitch_angle)
+            t1state = 1
+            yield t1state
             
             
             
@@ -120,25 +128,25 @@ def yaw_motor_fun():
         # define the encoder conversion factor for the 
         co_fac1 = get_conversion_factor(1)
         # motor setup
-        en_pin =  pyb.Pin(machine.Pin.cpu.G14, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
-        in1pin = pyb.Pin(machine.Pin.cpu.E11, pyb.Pin.OUT_PP)
-        in2pin = pyb.Pin(machine.Pin.cpu.E14, pyb.Pin.OUT_PP)
+        en_pin =  pyb.Pin(pyb.Pin.cpu.G12, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
+        in1pin = pyb.Pin(pyb.Pin.cpu.E9, pyb.Pin.OUT_PP)
+        in2pin = pyb.Pin(pyb.Pin.cpu.E11, pyb.Pin.OUT_PP)
         timer = pyb.Timer(1, freq=20000) #setting frequency for motor 
         motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
         motor.set_duty_cycle(0)
         # encoder setup
         # create the pin object to read encoder channel A
-        pin1 = pyb.Pin(pyb.Pin.cpu.C6, pyb.Pin.IN)
+        pin1 = pyb.Pin(pyb.Pin.cpu.A6, pyb.Pin.IN)
         # create the pin object to read encoder channel B
-        pin2 = pyb.Pin(pyb.Pin.cpu.C7, pyb.Pin.IN)
+        pin2 = pyb.Pin(pyb.Pin.cpu.B5, pyb.Pin.IN)
         # create the timer object.  For C6 and C7 use timer 8,
         # set the prescaler to zero and the period to the max 16bit number
-        timer = pyb.Timer(8, prescaler = 0, period = 65535)
+        timer = pyb.Timer(3, prescaler = 0, period = 65535)
         # create the encoder object
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac1)
-        encoder.set_pos(180)
+        encoder.set_pos(-180)
         # create controller object
-        con = CLController(1.5, 0.1, 1, 180)
+        con = CLController(5, 0.022, 1, 180)
         t2state = 1
         yield t2state
     else:
@@ -154,8 +162,9 @@ def yaw_motor_fun():
             con.set_setpoint(y_sp)
             encoder_angle = encoder.read()
             yaw_err = y_sp-encoder_angle
+            #print(yaw_err)
             yaw_err_list.append(yaw_err)
-            if len(yaw_err_list >= 5):
+            if len(yaw_err_list)>=5:
                 avg_yaw_err = sum(yaw_err_list)/5
                 if avg_yaw_err<yaw_motor_threshold:
                     yaw_motor_done.put(1)
@@ -179,25 +188,25 @@ def pitch_motor_fun():
         # define the encoder conversion factor for the 
         co_fac2 = get_conversion_factor(2)
         # motor setup
-        en_pin =  pyb.Pin(pyb.Pin.cpu.C2, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
-        in1pin = pyb.Pin(pyb.Pin.cpu.A3, pyb.Pin.OUT_PP)
-        in2pin = pyb.Pin(pyb.Pin.cpu.C0, pyb.Pin.OUT_PP)
-        timer = pyb.Timer(5, freq=20000) #setting frequency for motor 
+        en_pin =  pyb.Pin(pyb.Pin.cpu.G14, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
+        in1pin = pyb.Pin(pyb.Pin.cpu.B6, pyb.Pin.OUT_PP)
+        in2pin = pyb.Pin(pyb.Pin.cpu.B7, pyb.Pin.OUT_PP)
+        timer = pyb.Timer(4, freq=20000) #setting frequency for motor 
         motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
         motor.set_duty_cycle(0)
         # encoder setup
         # create the pin object to read encoder channel A
-        pin1 = pyb.Pin(pyb.Pin.board.PB6, pyb.Pin.IN)
+        pin1 = pyb.Pin(pyb.Pin.cpu.A15, pyb.Pin.IN)
         # create the pin object to read encoder channel B
-        pin2 = pyb.Pin(pyb.Pin.board.PB7, pyb.Pin.IN)
+        pin2 = pyb.Pin(pyb.Pin.cpu.B3, pyb.Pin.IN)
         # create the timer object.  For C6 and C7 use timer 8,
         # set the prescaler to zero and the period to the max 16bit number
-        timer = pyb.Timer(4, prescaler = 0, period = 65535)
+        timer = pyb.Timer(2, prescaler = 0, period = 65535)
         # create the encoder object
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac2)
-        encoder.set_pos(30)
+        encoder.set_pos(-30)
         # create controller object
-        con = CLController(1.5, 0.1, 1, 180)
+        con = CLController(0.1, 0, 0, 180)
         t3state = 1
         yield t3state
     else:
@@ -214,9 +223,9 @@ def pitch_motor_fun():
             encoder_angle = encoder.read()
             pitch_err = p_sp-encoder_angle
             pitch_err_list.append(pitch_err)
-            if len(pitch_err_list >= 5):
+            if len(pitch_err_list)>=5:
                 avg_pitch_err = sum(pitch_err_list)/5
-                if avg_err<pitch_motor_threshold:
+                if avg_pitch_err<pitch_motor_threshold:
                     pitch_motor_done.put(1)
                 pitch_err_list.pop(0)
             eff = con.run(encoder_angle)
@@ -286,7 +295,7 @@ def trigger_fun():
 def timing_handler_fun():
     t5state = 0
     tstart = utime.ticks_ms()
-    tend = tstart+5000
+    tend = tstart+WAIT_TIME
     if t5state == 0:
         t5state = 1
         yield t5state
@@ -295,7 +304,7 @@ def timing_handler_fun():
             curr_time = utime.ticks_ms()
             if curr_time >= tend:
                 run_motors.put(1)
-            t5state = 2
+                t5state = 2
             yield t5state
         elif t5state == 2:
             t5state = 2
@@ -335,7 +344,9 @@ if __name__ == "__main__":
     run_motors.put(0)
     yaw_motor_done.put(0)
     pitch_motor_done.put(0)
-    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=15,
+    yaw_motor_setpoint.put(0)
+    pitch_motor_setpoint.put(0)
+    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=1,period=15,
                         profile=True, trace=False)
     task2 = cotask.Task(yaw_motor_fun, name="Task 2: Yaw Motor Handler", priority=9,period=15,
                         profile=True, trace=False)
@@ -343,14 +354,14 @@ if __name__ == "__main__":
                         profile=True, trace=False)
     task4 = cotask.Task(trigger_fun, name="Task 4: Trigger handler", priority=10,period=15,
                         profile=True, trace=False)
-#    task3 = cotask.Task(serial_communication, name="Task 3", priority=3,period=10,
-#                        profile=True, trace=False)
     task5 = cotask.Task(timing_handler_fun, name="Task 4: Trigger handler", priority=10,period=15,
                         profile=True, trace=False)  
     # adding the tasks to task list, commenting out task3, used for acquiring data for plotting
     cotask.task_list.append(task1) #add tasks to scheduler list
     cotask.task_list.append(task2) #add tasks to scheduler list
-    #cotask.task_list.append(task3)
+    cotask.task_list.append(task3)
+    #cotask.task_list.append(task4)
+    cotask.task_list.append(task5)
     
     
     # Run the memory garbage collector to ensure memory is as defragmented as

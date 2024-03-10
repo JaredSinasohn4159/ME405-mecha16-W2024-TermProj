@@ -12,8 +12,8 @@ an encoder input reading.
 import micropython
 import pyb
 import utime
-from encoder_reader import Encoder
-from motor_driver import MotorDriver
+from motor_drivers.encoder_reader import Encoder
+from motor_drivers.motor_driver import MotorDriver
 
 class CLController:
     """! 
