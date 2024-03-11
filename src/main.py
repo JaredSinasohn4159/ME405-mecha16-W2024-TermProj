@@ -239,58 +239,34 @@ def trigger_fun():
     This function controls the yaw motor as part of the second task
     It runs the motor from 0 degrees to 180 degrees using a proportional controller
     """
-    t3state = 0
-    pitch_err_list = []
-    pitch_motor_threshold = 1
-    if t3state == 0:
-        # define the encoder conversion factor for the 
-        co_fac2 = get_conversion_factor(2)
-        # motor setup
-        en_pin =  pyb.Pin(pyb.Pin.board.PC1, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
-        in1pin = pyb.Pin(pyb.Pin.board.PA0, pyb.Pin.OUT_PP)
-        in2pin = pyb.Pin(pyb.Pin.board.PA1, pyb.Pin.OUT_PP)
-        timer = pyb.Timer(5, freq=20000) #setting frequency for motor 
-        motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
-        motor.set_duty_cycle(0)
-        # encoder setup
-        # create the pin object to read encoder channel A
-        pin1 = pyb.Pin(pyb.Pin.board.PB6, pyb.Pin.IN)
-        # create the pin object to read encoder channel B
-        pin2 = pyb.Pin(pyb.Pin.board.PB7, pyb.Pin.IN)
-        # create the timer object.  For C6 and C7 use timer 8,
-        # set the prescaler to zero and the period to the max 16bit number
-        timer = pyb.Timer(4, prescaler = 0, period = 65535)
-        # create the encoder object
-        encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac2)
-        encoder.set_pos(30)
-        # create controller object
-        con = CLController(1.5, 0.1, 1, 180)
-        t3state = 1
-        yield t3state
+    t4state = 0
+    counter = 0
+    if t4state == 0:
+        # Defining a different pin with an alternate function for Timer 2
+        servo_pin = pyb.Pin(pyb.Pin.cpu.E5, pyb.Pin.OUT_PP)
+        # Create a Timer object for PWM
+        timer = Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz
+        servo = Servo(servo_pin,timer)
+        t4state = 1
+        yield t4state
     else:
-        raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
+        raise ValueError(f"Invalid State in Task 4.  Current state is {t4state}")
     while True:
-        if t3state == 1:
-            motor.set_duty_cycle(0)
-            if run_motors.get() != 0:
-                t3state = 2
-            yield t3state
-        elif t3state == 2:
-            p_sp = pitch_motor_setpoint.get()
-            con.set_setpoint(p_sp)
-            encoder_angle = encoder.read()
-            pitch_err = p_sp-encoder_angle
-            pitch_err_list.append(pitch_err)
-            if len(pitch_err_list >= 5):
-                avg_pitch_err = sum(pitch_err_list)/5
-                if avg_err<pitch_motor_threshold:
-                    pitch_motor_done.put(1)
-                pitch_err_list.pop(0)
-            eff = con.run(encoder_angle)
-            motor.set_duty_cycle(eff)
-            yield t3state
+        if t4state == 1:
+            if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
+                servo.set_servo(170)
+                t4state = 2
+            yield tstate
+        elif t4state == 2:
+            if counter == 20:
+                servo.set_servo(180)
+                t4state = 3
+            counter += 1
+            yield t4state
+        elif t4state == 3:
+            yield t4state
         else:
-            raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
+            raise ValueError(f"Invalid State in Task 4.  Current state is {t4state}")
 
 def timing_handler_fun():
     t5state = 0
@@ -304,10 +280,17 @@ def timing_handler_fun():
             curr_time = utime.ticks_ms()
             if curr_time >= tend:
                 run_motors.put(1)
+                tstart = utime.ticks_ms()
+                tend = tstart + 1000
                 t5state = 2
             yield t5state
         elif t5state == 2:
-            t5state = 2
+            if utime.ticks_ms() > tend:
+                yaw_motor_done.put(1)
+                pitch_motor_dont.put(1)
+                t5state = 3
+            yield t5state
+        elif t5state == 3:
             yield t5state
         else:
             raise ValueError(f"Invalid State in Task 5.  Current state is {t5state}")
@@ -346,21 +329,21 @@ if __name__ == "__main__":
     pitch_motor_done.put(0)
     yaw_motor_setpoint.put(0)
     pitch_motor_setpoint.put(0)
-    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=1,period=15,
+    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=15,
                         profile=True, trace=False)
     task2 = cotask.Task(yaw_motor_fun, name="Task 2: Yaw Motor Handler", priority=9,period=15,
                         profile=True, trace=False)
     task3 = cotask.Task(pitch_motor_fun, name="Task 3: Pitch Motor Handler", priority=9,period=15,
                         profile=True, trace=False)
-    task4 = cotask.Task(trigger_fun, name="Task 4: Trigger handler", priority=10,period=15,
+    task4 = cotask.Task(trigger_fun, name="Task 4: Trigger Handler", priority=10,period=15,
                         profile=True, trace=False)
-    task5 = cotask.Task(timing_handler_fun, name="Task 4: Trigger handler", priority=10,period=15,
+    task5 = cotask.Task(timing_handler_fun, name="Task 5: Timing Handler", priority=10,period=15,
                         profile=True, trace=False)  
     # adding the tasks to task list, commenting out task3, used for acquiring data for plotting
     cotask.task_list.append(task1) #add tasks to scheduler list
     cotask.task_list.append(task2) #add tasks to scheduler list
     cotask.task_list.append(task3)
-    #cotask.task_list.append(task4)
+    cotask.task_list.append(task4)
     cotask.task_list.append(task5)
     
     
