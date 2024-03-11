@@ -48,6 +48,7 @@ import task_share
 from motor_drivers.encoder_reader import Encoder
 from motor_drivers.motor_driver import MotorDriver
 from motor_drivers.controller import CLController
+from motor_drivers.servo_driver import Servo
 from mlx_cam import MLX_Cam as Cam
 from ulab import numpy as np
 from machine import Pin, I2C
@@ -123,7 +124,8 @@ def yaw_motor_fun():
     """
     t2state = 0
     yaw_err_list = []
-    yaw_motor_threshold = 1
+    yaw_motor_threshold = 3.5
+    yaw_err_len = 10
     if t2state == 0:
         # define the encoder conversion factor for the 
         co_fac1 = get_conversion_factor(1)
@@ -146,34 +148,38 @@ def yaw_motor_fun():
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac1)
         encoder.set_pos(-180)
         # create controller object
-        con = CLController(5, 0.022, 1, 180)
+        con = CLController(25, 0.03,5, 180)
         t2state = 1
         yield t2state
     else:
         raise ValueError(f"Invalid State in Task 2.  Current state is {t2state}")
     while True:
-        if t2state == 1:
+        try:
+            if t2state == 1:
+                motor.set_duty_cycle(0)
+                if run_motors.get() != 0:
+                    t2state = 2
+                yield t2state
+            elif t2state == 2:
+                y_sp = yaw_motor_setpoint.get()
+                con.set_setpoint(y_sp)
+                encoder_angle = encoder.read()
+                yaw_err = y_sp-encoder_angle
+                yaw_err_list.append(yaw_err)
+                if len(yaw_err_list)>=yaw_err_len:
+                    avg_yaw_err = sum(yaw_err_list)/yaw_err_len
+                    print(avg_yaw_err)
+                    if abs(avg_yaw_err)<yaw_motor_threshold:
+                        yaw_motor_done.put(1)
+                        print(avg_yaw_err)
+                    yaw_err_list = []
+                eff = con.run(encoder_angle)
+                motor.set_duty_cycle(eff)
+                yield t2state
+            else:
+                raise ValueError(f"Invalid State in Task 2.  Current state is {t2state}")
+        except KeyboardInterrupt:
             motor.set_duty_cycle(0)
-            if run_motors.get() != 0:
-                t2state = 2
-            yield t2state
-        elif t2state == 2:
-            y_sp = yaw_motor_setpoint.get()
-            con.set_setpoint(y_sp)
-            encoder_angle = encoder.read()
-            yaw_err = y_sp-encoder_angle
-            #print(yaw_err)
-            yaw_err_list.append(yaw_err)
-            if len(yaw_err_list)>=5:
-                avg_yaw_err = sum(yaw_err_list)/5
-                if avg_yaw_err<yaw_motor_threshold:
-                    yaw_motor_done.put(1)
-                yaw_err_list.pop(0)
-            eff = con.run(encoder_angle)
-            motor.set_duty_cycle(eff)
-            yield t2state
-        else:
-            raise ValueError(f"Invalid State in Task 2.  Current state is {t2state}")
 
 
 def pitch_motor_fun():
@@ -212,27 +218,30 @@ def pitch_motor_fun():
     else:
         raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
     while True:
-        if t3state == 1:
+        try:
+            if t3state == 1:
+                motor.set_duty_cycle(0)
+                if run_motors.get() != 0:
+                    t3state = 2
+                yield t3state
+            elif t3state == 2:
+                p_sp = pitch_motor_setpoint.get()
+                con.set_setpoint(p_sp)
+                encoder_angle = encoder.read()
+                pitch_err = p_sp-encoder_angle
+                pitch_err_list.append(pitch_err)
+                if len(pitch_err_list)>=5:
+                    avg_pitch_err = sum(pitch_err_list)/5
+                    if avg_pitch_err<pitch_motor_threshold:
+                        pitch_motor_done.put(1)
+                    pitch_err_list.pop(0)
+                eff = con.run(encoder_angle)
+                motor.set_duty_cycle(eff)
+                yield t3state
+            else:
+                raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
+        except KeyboardInterrupt:
             motor.set_duty_cycle(0)
-            if run_motors.get() != 0:
-                t3state = 2
-            yield t3state
-        elif t3state == 2:
-            p_sp = pitch_motor_setpoint.get()
-            con.set_setpoint(p_sp)
-            encoder_angle = encoder.read()
-            pitch_err = p_sp-encoder_angle
-            pitch_err_list.append(pitch_err)
-            if len(pitch_err_list)>=5:
-                avg_pitch_err = sum(pitch_err_list)/5
-                if avg_pitch_err<pitch_motor_threshold:
-                    pitch_motor_done.put(1)
-                pitch_err_list.pop(0)
-            eff = con.run(encoder_angle)
-            motor.set_duty_cycle(eff)
-            yield t3state
-        else:
-            raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
 
 def trigger_fun():
     """!
@@ -245,7 +254,7 @@ def trigger_fun():
         # Defining a different pin with an alternate function for Timer 2
         servo_pin = pyb.Pin(pyb.Pin.cpu.E5, pyb.Pin.OUT_PP)
         # Create a Timer object for PWM
-        timer = Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz
+        timer = pyb.Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz
         servo = Servo(servo_pin,timer)
         t4state = 1
         yield t4state
@@ -254,9 +263,10 @@ def trigger_fun():
     while True:
         if t4state == 1:
             if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
-                servo.set_servo(170)
+                print("pew")
+                servo.set_servo(165)
                 t4state = 2
-            yield tstate
+            yield t4state
         elif t4state == 2:
             if counter == 20:
                 servo.set_servo(180)
@@ -281,13 +291,13 @@ def timing_handler_fun():
             if curr_time >= tend:
                 run_motors.put(1)
                 tstart = utime.ticks_ms()
-                tend = tstart + 1000
+                tend = tstart + 3000
                 t5state = 2
             yield t5state
         elif t5state == 2:
             if utime.ticks_ms() > tend:
                 yaw_motor_done.put(1)
-                pitch_motor_dont.put(1)
+                pitch_motor_done.put(1)
                 t5state = 3
             yield t5state
         elif t5state == 3:
@@ -326,7 +336,7 @@ if __name__ == "__main__":
     pitch_motor_setpoint = task_share.Share("f", name="Pitch motor setpoint")
     run_motors.put(0)
     yaw_motor_done.put(0)
-    pitch_motor_done.put(0)
+    pitch_motor_done.put(1)
     yaw_motor_setpoint.put(0)
     pitch_motor_setpoint.put(0)
     task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=15,

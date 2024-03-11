@@ -16,7 +16,6 @@ class Servo:
         # Converting degrees into PWM percentage, accounting for range from specs
         duty_cycle = ((angle / 180) * (2500 - 500) + 500)/1000000
         duty_cycle = duty_cycle*frequency*100
-        print(duty_cycle)
         self.channel.pulse_width_percent(duty_cycle)
         
             #print('1')
@@ -34,6 +33,7 @@ if __name__ =='__main__':
         utime.sleep(0.5)
         angle = 180
         servo.set_servo(int(angle))
+        utime.sleep(0.5)
         pass   
 
     except KeyboardInterrupt:
