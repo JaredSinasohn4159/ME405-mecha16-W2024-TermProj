@@ -81,16 +81,20 @@ class MotorDriver:
             self.ch1.pulse_width_percent(0)
             self.ch2.pulse_width_percent(0)
             raise ValueError
+    def disable(self):
+        self.ch1.pulse_width_percent(0)
+        self.ch2.pulse_width_percent(0)
+        self.en_pin.low()
 
 if __name__ == "__main__":
     # power the motor for five seconds 
-    en_pin =  pyb.Pin(pyb.Pin.board.D7, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
-    in1pin = pyb.Pin(pyb.Pin.board.D6, pyb.Pin.OUT_PP)
-    in2pin = pyb.Pin(pyb.Pin.board.D5, pyb.Pin.OUT_PP)
-    timer = pyb.Timer(1, freq=5000) #setting frequency for motor 
-    motor = MotorDriver(en_pin,in1pin,in2pin,timer) #call to the motor class you just made!
-    motor.set_duty_cycle(-100) #set duty cycle, in range -100 to 100 (not including 0)
-    utime.sleep(5)
+    en_pin =  pyb.Pin(pyb.Pin.cpu.G14, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
+    in1pin = pyb.Pin(pyb.Pin.cpu.B6, pyb.Pin.OUT_PP)
+    in2pin = pyb.Pin(pyb.Pin.cpu.B7, pyb.Pin.OUT_PP)
+    timer = pyb.Timer(4, freq=20000) #setting frequency for motor 
+    motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
+    motor.set_duty_cycle(100)
+    utime.sleep(2)
     motor.set_duty_cycle(0)
     
 
