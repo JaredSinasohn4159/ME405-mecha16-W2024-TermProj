@@ -28,10 +28,10 @@ if __name__ =='__main__':
     timer = Timer(15, freq=frequency)  # Timer 2 with a frequency of 50 Hz
     servo = Servo(servo_pin,timer)
     try:
-        angle = 170
+        angle = 15
         servo.set_servo(int(angle))
         utime.sleep(0.5)
-        angle = 180
+        angle = 0
         servo.set_servo(int(angle))
         utime.sleep(0.5)
         pass   

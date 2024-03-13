@@ -83,7 +83,7 @@ class MotorContainer:
          self.pitch_motor.disable()
          
     def disable_servo(self):
-        self.servo.set_servo(180)
+        self.servo.set_servo(0)
         
         
 def get_conversion_factor(belt_ratio):
@@ -171,7 +171,7 @@ def yaw_motor_fun():
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac1)
         encoder.set_pos(-180)
         # create controller object
-        con = CLController(25, 0,5, 180)
+        con = CLController(35, 0,5, 180)
         t2state = 1
         yield t2state
     else:
@@ -288,12 +288,12 @@ def trigger_fun():
         if t4state == 1:
             if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
                 print("pew")
-                servo.set_servo(165)
+                servo.set_servo(15)
                 t4state = 2
             yield t4state
         elif t4state == 2:
             if counter == 20:
-                servo.set_servo(180)
+                servo.set_servo(0)
                 returning.put(1)
                 t4state = 3
             counter += 1
@@ -322,6 +322,7 @@ def timing_handler_fun():
             yield t5state
         elif t5state == 2:
             if utime.ticks_ms() > tend:
+                print("here")
                 yaw_motor_done.put(1)
                 pitch_motor_done.put(1)
                 t5state = 3
@@ -365,7 +366,7 @@ if __name__ == "__main__":
     yaw_motor_setpoint.put(0)
     pitch_motor_setpoint.put(0)
     returning.put(0)
-    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=10,period=50,
+    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=50,
                         profile=True, trace=False)
     task2 = cotask.Task(yaw_motor_fun, name="Task 2: Yaw Motor Handler", priority=9,period=15,
                         profile=True, trace=False)
