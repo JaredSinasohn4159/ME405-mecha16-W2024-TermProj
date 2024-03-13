@@ -52,8 +52,9 @@ from motor_drivers.servo_driver import Servo
 from mlx_cam import MLX_Cam as Cam
 from ulab import numpy as np
 from machine import Pin, I2C
+from cam2setpoint import cam2setpoint
 
-WAIT_TIME = 500
+WAIT_TIME = 5000
 class MotorContainer:
     def __init__(self):
         en_pin =  pyb.Pin(pyb.Pin.cpu.G12, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
@@ -68,12 +69,21 @@ class MotorContainer:
         timer = pyb.Timer(4, freq=20000) #setting frequency for motor 
         self.pitch_motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
         self.pitch_motor.set_duty_cycle(0)
+        # Defining a different pin with an alternate function for Timer 2
+        servo_pin = pyb.Pin(pyb.Pin.cpu.E5, pyb.Pin.OUT_PP)
+        # Create a Timer object for PWM
+        timer = pyb.Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz
+        self.servo = Servo(servo_pin,timer)
+        
         
     def disable_yaw(self):
          self.yaw_motor.disable()
          
     def disable_pitch(self):
          self.pitch_motor.disable()
+         
+    def disable_servo(self):
+        self.servo.set_servo(180)
         
         
 def get_conversion_factor(belt_ratio):
@@ -100,7 +110,7 @@ def camera_handler_fun():
     regions = None
     target = None
     if t1state == 0:
-        i2c_bus = I2C(1)
+        i2c_bus = I2C(1, freq = 800000, timeout=10000000)
         i2c_address = 0x33
         camera = Cam(i2c_bus)
         camera._camera.refresh_rate = 10.0
@@ -117,18 +127,8 @@ def camera_handler_fun():
             t1state = 2
             yield t1state
         elif t1state == 2:
-            #im_arr = medfilt2(im_arr)
-            t1state = 3
-            yield t1state
-        elif t1state == 3:
-            #regions = regionprops(im_arr)
-            #target = max(regions.size)
-            t1state = 4
-            yield t1state
-        elif t1state == 4:
-            #pitch_angle, yaw_angle = get_camera_angles()
-            yaw_angle = 0
-            pitch_angle = 0
+            yaw_angle, pitch_angle = cam2setpoint(im_arr)
+            print(f"{yaw_angle}, {pitch_angle}")
             yaw_motor_setpoint.put(yaw_angle)
             pitch_motor_setpoint.put(pitch_angle)
             t1state = 1
@@ -145,7 +145,7 @@ def yaw_motor_fun():
     """
     t2state = 0
     yaw_err_list = []
-    yaw_motor_threshold = 3.5
+    yaw_motor_threshold = 1
     yaw_err_len = 10
     if t2state == 0:
         # define the encoder conversion factor for the 
@@ -169,12 +169,13 @@ def yaw_motor_fun():
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac1)
         encoder.set_pos(-180)
         # create controller object
-        con = CLController(25, 0.02,5, 180)
+        con = CLController(25, 0,5, 180)
         t2state = 1
         yield t2state
     else:
         raise ValueError(f"Invalid State in Task 2.  Current state is {t2state}")
     while True:
+        #print("State 2")
         if t2state == 1:
             motor.set_duty_cycle(0)
             if run_motors.get() != 0:
@@ -235,6 +236,7 @@ def pitch_motor_fun():
     else:
         raise ValueError(f"Invalid State in Task 3.  Current state is {t3state}")
     while True:
+        #print("State 3")
         if t3state == 1:
             motor.set_duty_cycle(0)
             if run_motors.get() != 0:
@@ -276,6 +278,7 @@ def trigger_fun():
     else:
         raise ValueError(f"Invalid State in Task 4.  Current state is {t4state}")
     while True:
+        #print("State 4")
         if t4state == 1:
             if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
                 print("pew")
@@ -289,6 +292,7 @@ def trigger_fun():
             counter += 1
             yield t4state
         elif t4state == 3:
+            raise KeyboardInterrupt
             yield t4state
         else:
             raise ValueError(f"Invalid State in Task 4.  Current state is {t4state}")
@@ -296,17 +300,18 @@ def trigger_fun():
 def timing_handler_fun():
     t5state = 0
     tstart = utime.ticks_ms()
-    tend = tstart+WAIT_TIME
+    tend = tstart
     if t5state == 0:
         t5state = 1
         yield t5state
     while True:
+        #print("State 5")
         if t5state == 1:
             curr_time = utime.ticks_ms()
             if curr_time >= tend:
                 run_motors.put(1)
                 tstart = utime.ticks_ms()
-                tend = tstart + 3000
+                tend = tstart + WAIT_TIME
                 t5state = 2
             yield t5state
         elif t5state == 2:
@@ -320,19 +325,7 @@ def timing_handler_fun():
         else:
             raise ValueError(f"Invalid State in Task 5.  Current state is {t5state}")
 
-#def serial_communication():
-#    """!
-#    This function controls the serial communication between the microcontroller
-#    and the computer to plot responses if necessary.  It prints the list of values
-#    one value at a time.
-#    """
-#    while True:
-#        if not time1.full() or not pos1.full():
-#            yield 0
-#        else:
-#            while time1.any() and pos1.any():
-#                print(f"{time1.get()}, {pos1.get()}")
-#                yield 0
+
 # This code creates a share, a queue, and two tasks, then starts the tasks. The
 # tasks run until somebody presses ENTER, at which time the scheduler stops and
 # printouts show diagnostic information about the tasks, share, and queue.
@@ -354,7 +347,7 @@ if __name__ == "__main__":
     pitch_motor_done.put(0)
     yaw_motor_setpoint.put(0)
     pitch_motor_setpoint.put(0)
-    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=15,
+    task1 = cotask.Task(camera_handler_fun, name="Task 1: Camera Handler", priority=5,period=100,
                         profile=True, trace=False)
     task2 = cotask.Task(yaw_motor_fun, name="Task 2: Yaw Motor Handler", priority=9,period=15,
                         profile=True, trace=False)
@@ -383,6 +376,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             motors.disable_yaw()
             motors.disable_pitch()
+            motors.disable_servo()
             break
 
     # Print a table of task data and a table of shared information data
