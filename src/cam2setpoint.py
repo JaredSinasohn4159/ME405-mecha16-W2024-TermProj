@@ -2,9 +2,6 @@ from ulab import numpy as np
 import utime
 # The following code was written by hand in matlab but converted to python using ChatGPT
 def cam2setpoint(im):
-    # Hardcoded X-Y planes
-    X_plane = np.array([np.linspace(-27.5, 27.5, 32)] * 24)
-    Y_plane = np.array([np.linspace(17.5, -17.5, 24)] * 32).T
     noisefilt = np.array([[0,85,49,85,48,85,55,85,48,85,70,85,61,85,72,85,69,85,85,85,74,85,85,85,85,85,85,85,85,85,85,85],
                             [0,77,32,85,29,74,36,85,46,82,43,85,53,85,52,85,65,85,59,85,66,75,68,85,78,85,67,85,84,85,79,85],
                             [0,85,18,85,21,85,40,85,25,85,58,85,50,85,66,85,54,85,71,85,60,85,85,85,69,85,84,85,78,85,85,85],
@@ -29,6 +26,9 @@ def cam2setpoint(im):
                             [0,55,33,85,38,57,33,85,40,56,38,85,43,47,42,85,54,65,47,85,57,56,44,85,55,53,54,85,65,42,62,79],
                             [0,68,35,73,9,70,35,85,27,85,51,85,38,85,45,85,36,80,57,85,36,80,69,85,46,85,60,85,60,85,85,84],
                             [0,56,12,62,16,36,28,81,28,42,28,76,45,43,33,85,26,35,31,74,27,31,30,66,42,36,40,61,54,24,44,54]])
+    # Hardcoded X-Y planes
+    X_plane = np.array([np.linspace(-27.5, 27.5, 32)] * 24)
+    Y_plane = np.array([np.linspace(17.5, -17.5, 24)] * 32).T
     boy_temp = im-noisefilt
     boy_temp = boy_temp / np.max(boy_temp) * 255
     binboy_temp = boy_temp > 255 / 2
@@ -66,5 +66,5 @@ if __name__=="__main__":
     starttime = utime.ticks_us()
     cam2setpoint(noisefilt)
     totaltime = utime.ticks_diff(utime.ticks_us(), starttime)
-    print(f"Time to complete operations: {totaltime} us")
+    print(f"Time to complete operations: {totaltime/1000} ms")
     

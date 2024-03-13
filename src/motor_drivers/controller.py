@@ -95,14 +95,14 @@ class CLController:
         This method sets the ki based on the function input
         @param ki - the integral gain for the integral part of the PID controller
         """
-        self.ki = self.ki
+        self.ki = ki
 
     def set_kd(self, kd):
         """!
         This method sets the ki based on the function input
         @param kd - the derivative gain for the derivative part of the PID controller
         """
-        self.kd = self.kd
+        self.kd = kd
 
     def get_pos(self):
         """!
