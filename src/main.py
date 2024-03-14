@@ -130,8 +130,8 @@ def camera_handler_fun():
             yaw_angle, pitch_angle = cam2setpoint(im_arr)
             print(f"{yaw_angle}, {pitch_angle}")
             if not returning.get() == 1:
-                yaw_motor_setpoint.put(yaw_angle/2)
-                pitch_motor_setpoint.put(pitch_angle/2)
+                yaw_motor_setpoint.put(21.54*yaw_angle+7.54)
+                pitch_motor_setpoint.put(pitch_angle/2+3)
             image = None
             t1state = 1
             yield t1state
@@ -147,7 +147,7 @@ def yaw_motor_fun():
     """
     t2state = 0
     yaw_err_list = []
-    yaw_motor_threshold = 1
+    yaw_motor_threshold = 0.1
     yaw_err_len = 100
     if t2state == 0:
         # define the encoder conversion factor for the 
@@ -171,7 +171,7 @@ def yaw_motor_fun():
         encoder = Encoder(pin1, pin2, timer, conversion_factor = co_fac1)
         encoder.set_pos(-180)
         # create controller object
-        con = CLController(35, 0,5, 180)
+        con = CLController(35, 0,0, 180)
         t2state = 1
         yield t2state
     else:
@@ -186,12 +186,10 @@ def yaw_motor_fun():
         elif t2state == 2:
             y_sp = yaw_motor_setpoint.get()
             con.set_setpoint(y_sp)
+            print(y_sp)
             encoder_angle = encoder.read()
+            #der_angle}")
             yaw_err = y_sp-encoder_angle
-            if abs(yaw_err) < 3:
-                con.set_ki(0)
-            else:
-                con.set_ki(0)
             yaw_err_list.append(yaw_err)
             if len(yaw_err_list)>=yaw_err_len:
                 avg_yaw_err = sum(yaw_err_list)/yaw_err_len
@@ -288,11 +286,11 @@ def trigger_fun():
         if t4state == 1:
             if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
                 print("pew")
-                servo.set_servo(15)
+                servo.set_servo(25)
                 t4state = 2
             yield t4state
         elif t4state == 2:
-            if counter == 20:
+            if counter == 30:
                 servo.set_servo(0)
                 returning.put(1)
                 t4state = 3

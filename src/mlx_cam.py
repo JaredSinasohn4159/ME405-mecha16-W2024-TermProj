@@ -28,6 +28,7 @@ from mlx90640 import MLX90640
 from mlx90640.calibration import NUM_ROWS, NUM_COLS, IMAGE_SIZE, TEMP_K
 from mlx90640.image import ChessPattern, InterleavedPattern
 from ulab import numpy as np
+from cam2setpoint import cam2setpoint
 
 
 ## @brief   Class which wraps an MLX90640 thermal infrared camera driver to
@@ -180,11 +181,7 @@ def test_MLX_cam():
 
     while True:
         try:
-            input()
             # Get and image and see how long it takes to grab that image
-            print("Click.", end='')
-            begintime = time.ticks_ms()
-            image = camera.get_image()
 
             # Keep trying to get an image; this could be done in a task, with
             # the task yielding repeatedly until an image is available
@@ -192,7 +189,7 @@ def test_MLX_cam():
             while not image:
                 image = camera.get_image_nonblocking()
                 #time.sleep_ms(50)
-            print(f" {time.ticks_diff(time.ticks_ms(), begintime)} ms")
+            #print(f" {time.ticks_diff(time.ticks_ms(), begintime)} ms")
 
             # Can show image.v_ir, image.alpha, or image.buf; image.v_ir best?
             # Display pixellated grayscale or numbers in CSV format; the CSV
@@ -200,19 +197,23 @@ def test_MLX_cam():
             # CPython can read CSV and make a decent false-color heat plot.
             show_image = False
             show_csv = True
-            time.sleep_ms(2000)
+            time.sleep_ms(100)
             #print(camera.get_array(image, limits=(0, 255)))
-            if show_image:
-                camera.ascii_image(image)
-            elif show_csv:
-                for line in camera.get_csv(image, limits=(0, 255)):
-                    print(line)
-                pass
-            else:
-                camera.ascii_art(image)
-            gc.collect()
-            print(f"Memory: {gc.mem_free()} B free")
-            #time.sleep_ms(3141)
+#             if show_image:
+#                 camera.ascii_image(image)
+#             elif show_csv:
+#                 for line in camera.get_csv(image, limits=(0, 255)):
+#                     print(line)
+#                 pass
+#             else:
+#                 camera.ascii_art(image)
+#             gc.collect()
+            numpy_arr = camera.get_array(image)
+            #print(f"Memory: {gc.mem_free()} B free")
+            X,Y = cam2setpoint(numpy_arr)
+            scale_x = 1
+            scale_y = 1
+            print(f"{scale_x*X},{scale_y*Y}")
 
         except KeyboardInterrupt:
             break

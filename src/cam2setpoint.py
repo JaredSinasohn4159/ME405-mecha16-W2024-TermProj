@@ -31,7 +31,7 @@ def cam2setpoint(im):
     Y_plane = np.array([np.linspace(17.5, -17.5, 24)] * 32).T
     boy_temp = im-noisefilt
     boy_temp = boy_temp / np.max(boy_temp) * 255
-    binboy_temp = boy_temp > 255 / 2
+    binboy_temp = boy_temp > 255/2
     # Heat centroid calc
     ROI_temp = boy_temp * binboy_temp
     ROIsum_temp = np.sum(ROI_temp)
