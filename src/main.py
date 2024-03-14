@@ -54,7 +54,7 @@ from ulab import numpy as np
 from machine import Pin, I2C
 from cam2setpoint import cam2setpoint
 
-WAIT_TIME = 5000
+WAIT_TIME = 13000
 class MotorContainer:
     def __init__(self):
         en_pin =  pyb.Pin(pyb.Pin.cpu.G12, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
@@ -130,8 +130,8 @@ def camera_handler_fun():
             yaw_angle, pitch_angle = cam2setpoint(im_arr)
             print(f"{yaw_angle}, {pitch_angle}")
             if not returning.get() == 1:
-                yaw_motor_setpoint.put(21.54*yaw_angle+7.54)
-                pitch_motor_setpoint.put(pitch_angle/2+3)
+                yaw_motor_setpoint.put(16*yaw_angle+11.5)
+                pitch_motor_setpoint.put(pitch_angle/2+2)
             image = None
             t1state = 1
             yield t1state
@@ -147,8 +147,8 @@ def yaw_motor_fun():
     """
     t2state = 0
     yaw_err_list = []
-    yaw_motor_threshold = 0.1
-    yaw_err_len = 100
+    yaw_motor_threshold = 0.5
+    yaw_err_len = 25
     if t2state == 0:
         # define the encoder conversion factor for the 
         co_fac1 = get_conversion_factor(1)
@@ -186,11 +186,11 @@ def yaw_motor_fun():
         elif t2state == 2:
             y_sp = yaw_motor_setpoint.get()
             con.set_setpoint(y_sp)
-            print(y_sp)
+            #print(y_sp)
             encoder_angle = encoder.read()
             #der_angle}")
             yaw_err = y_sp-encoder_angle
-            yaw_err_list.append(yaw_err)
+            yaw_err_list.append(abs(yaw_err))
             if len(yaw_err_list)>=yaw_err_len:
                 avg_yaw_err = sum(yaw_err_list)/yaw_err_len
                 if abs(avg_yaw_err)<yaw_motor_threshold:
@@ -287,11 +287,13 @@ def trigger_fun():
             if yaw_motor_done.get() > 0 and pitch_motor_done.get() > 0:
                 print("pew")
                 servo.set_servo(25)
+                run_motors.put(0)
                 t4state = 2
             yield t4state
         elif t4state == 2:
             if counter == 30:
                 servo.set_servo(0)
+                run_motors.put(1)
                 returning.put(1)
                 t4state = 3
             counter += 1
