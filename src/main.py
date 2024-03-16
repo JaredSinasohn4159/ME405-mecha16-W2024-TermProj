@@ -9,10 +9,6 @@
 # Encoder_A = A6
 # Encoder_B = B5
 
-
-
-
-
 # PITCH B
 # EN_PIN = G14
 
@@ -30,12 +26,12 @@
 
 """!
 @file main.py
-    This file modifies the basic_tasks.py file created by Dr. Ridgley and implements a co-tasking
-    system to control the position of two motors at the same time.
-
-@author JR Ridgely
+    This is the main file used for operating the thermal camera and turret
+    for the ME 405 term project. It uses the mlx 90640 thermal camera,
+    two motors for yaw and pitch, and a servo to drive the trigger (fire)
 @author Sydney Ulvick
 @author Jared Sinasohn
+@author Sean Nakashimo
 @date   2021-Dec-15 JRR Created from the remains of previous example
 @copyright (c) 2015-2021 by JR Ridgely and released under the GNU
     Public License, Version 2. 
@@ -54,28 +50,32 @@ from ulab import numpy as np
 from machine import Pin, I2C
 from cam2setpoint import cam2setpoint
 
-WAIT_TIME = 13000
+WAIT_TIME = 13000 #wait time (ms) to stop program after starting code
 class MotorContainer:
     def __init__(self):
+        #setting up yaw/ panning axis motor
         en_pin =  pyb.Pin(pyb.Pin.cpu.G12, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
         in1pin = pyb.Pin(pyb.Pin.cpu.E9, pyb.Pin.OUT_PP)
         in2pin = pyb.Pin(pyb.Pin.cpu.E11, pyb.Pin.OUT_PP)
         timer = pyb.Timer(1, freq=20000) #setting frequency for motor 
         self.yaw_motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
-        self.yaw_motor.set_duty_cycle(0)
+        self.yaw_motor.set_duty_cycle(0) #turning motor off for safety
+        
+        #setting up pitch/ uppy downy angle motor
         en_pin =  pyb.Pin(pyb.Pin.cpu.G14, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
         in1pin = pyb.Pin(pyb.Pin.cpu.B6, pyb.Pin.OUT_PP)
         in2pin = pyb.Pin(pyb.Pin.cpu.B7, pyb.Pin.OUT_PP)
         timer = pyb.Timer(4, freq=20000) #setting frequency for motor 
         self.pitch_motor = MotorDriver(en_pin,in1pin,in2pin,timer) #create motor object
-        self.pitch_motor.set_duty_cycle(0)
-        # Defining a different pin with an alternate function for Timer 2
-        servo_pin = pyb.Pin(pyb.Pin.cpu.E5, pyb.Pin.OUT_PP)
+        self.pitch_motor.set_duty_cycle(0) #turning off motor for safety
+        
+        #setting up servo
+        servo_pin = pyb.Pin(pyb.Pin.cpu.E5, pyb.Pin.OUT_PP) # Defining a different pin with an alternate function for Timer 2
         # Create a Timer object for PWM
-        timer = pyb.Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz
-        self.servo = Servo(servo_pin,timer)
+        timer = pyb.Timer(15, freq=50)  # Timer 2 with a frequency of 50 Hz, common for servos
+        self.servo = Servo(servo_pin,timer) #create servo object
         
-        
+        # disable turns both channels PWM off and EN pin to low
     def disable_yaw(self):
          self.yaw_motor.disable()
          
@@ -103,17 +103,18 @@ def camera_handler_fun():
     """!
     This function implements the camera handler task and its finite state machine
     """
-    t1state = 0
+    t1state = 0 #set state variable to 0 to ensure it inits
+    #zero camera parameters 
     image = None
     im_arr = None
     camera = None
     regions = None
     target = None
-    if t1state == 0:
-        i2c_bus = I2C(1, freq = 400000, timeout=1000000)
-        i2c_address = 0x33
-        camera = Cam(i2c_bus)
-        camera._camera.refresh_rate = 10.0
+    if t1state == 0: #state zero
+        i2c_bus = I2C(1, freq = 400000, timeout=1000000) #creating bus object
+        i2c_address = 0x33 #assigning address per data sheet
+        camera = Cam(i2c_bus) #creating camera object from MLX_Cam class
+        camera._camera.refresh_rate = 10.0 #frequency of image gathering
         t1state = 1
         yield t1state
     else:
@@ -147,8 +148,8 @@ def yaw_motor_fun():
     """
     t2state = 0
     yaw_err_list = []
-    yaw_motor_threshold = 0.5
-    yaw_err_len = 25
+    yaw_motor_threshold = 0.5 #amount of permissible error
+    yaw_err_len = 25 #error is avg of 25 position readings
     if t2state == 0:
         # define the encoder conversion factor for the 
         co_fac1 = get_conversion_factor(1)

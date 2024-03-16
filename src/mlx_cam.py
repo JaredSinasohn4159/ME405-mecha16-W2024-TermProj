@@ -1,26 +1,17 @@
-## @file mlx_cam.py
-# 
-#  RAW VERSION
-#  This version uses a stripped down MLX90640 driver which produces only raw
-#  data, not calibrated data, in order to save memory.
-# 
-#  This file contains a wrapper that facilitates the use of a Melexis MLX90640
-#  thermal infrared camera for general use. The wrapper contains a class MLX_Cam
-#  whose use is greatly simplified in comparison to that of the base class,
-#  @c class @c MLX90640, by mwerezak, who has a cool fox avatar, at
-#  @c https://github.com/mwerezak/micropython-mlx90640
-# 
-#  To use this code, upload the directory @c mlx90640 from mwerezak with all
-#  its contents to the root directory of your MicroPython device, then copy
-#  this file to the root directory of the MicroPython device.
-# 
-#  There's some test code at the bottom of this file which serves as a
-#  beginning example.
-# 
-#  @author mwerezak Original files, Summer 2022
-#  @author JR Ridgely Added simplified wrapper class @c MLX_Cam, January 2023
-#  @copyright (c) 2022-2023 by the authors and released under the GNU Public
-#      License, version 3.
+
+"""!
+@file mlx_cam.py
+    This file contains a wrapper that facilitates the use of a Melexis MLX90640
+    thermal infrared camera for general use. The wrapper contains a class MLX_Cam
+    whose use is greatly simplified in comparison to that of the base class. The code
+    (originally from JR Ridgely) has been modified to calibrate sensor output.
+@author Sydney Ulvick
+@author Jared Sinasohn
+@author Sean Nakashimo
+@date   2021-Dec-15 JRR Created from the remains of previous example
+@copyright (c) 2022-2023 by JR Ridgely and released under the GNU
+    Public License, Version 2. 
+"""
 
 import utime as time
 from machine import Pin, I2C
@@ -37,6 +28,9 @@ from cam2setpoint import cam2setpoint
 #           (which takes lots of time and memory) and only gives relative IR
 #           emission seen by pixels, not estimates of the temperatures.
 class MLX_Cam:
+    """! 
+    This class implements the MLX90640 for use with our turret. 
+    """
 
     ## @brief   Set up an MLX90640 camera.
     #  @param   i2c An I2C bus which has been set up to talk to the camera;
@@ -48,11 +42,18 @@ class MLX_Cam:
     #  @param   height The height of the image in pixels; leave it at default
     def __init__(self, i2c, address=0x33, pattern=ChessPattern,
                  width=NUM_COLS, height=NUM_ROWS):
-
-        ## The I2C bus to which the camera is attached
-        self._i2c = i2c
-        ## The address of the camera on the I2C bus
-        self._addr = address
+        """! 
+        Initializes the camera, setting up the I2C address as well as the desired
+        csv parameters such as the number of columns and rows.
+        @param i2c: the bus which the camera is attached 
+        @param address: address of the camera on the bus
+        @param pattern: pattern for reading the camera
+        @param width: width of the image in pixels
+        @param height: height of the image in pixels
+        @param ch2: where the timer is being channeled to send to pin2
+        """
+        self._i2c = i2c #bus object
+        self._addr = address #i2c address
         ## The pattern for reading the camera, usually ChessPattern
         self._pattern = pattern
         ## The width of the image in pixels, which should be 32
@@ -73,10 +74,15 @@ class MLX_Cam:
         self._image = self._camera.raw
         
     def get_array(self, array, limits=None):
-        if limits and len(limits) == 2:
-            scale = (limits[1] - limits[0]) / (max(array) - min(array))
-            offset = limits[0] - min(array)
-        else:
+        """! 
+        Reads the camera data to form the raw data array of camera data.
+        @param array: the bus which the camera is attached 
+        @param limits: sets the scale and offset of the array. 
+        """
+        if limits and len(limits) == 2: #if limits applied/is a tuple
+            scale = (limits[1] - limits[0]) / (max(array) - min(array)) #scale factor/ range
+            offset = limits[0] - min(array) #min value in array
+        else: #if no limits are set, set it to nominal values below:
             offset = 0.0
             scale = 1.0
         arr = np.zeros((self._height, self._width), dtype=np.uint8)
@@ -88,7 +94,11 @@ class MLX_Cam:
         return arr
     
     def get_csv(self, array, limits=None):
-
+         """! 
+        Reads the camera data to form the raw data csv of camera data.
+        @param array: the bus which the camera is attached 
+        @param limits: sets the scale and offset of the array. 
+        """
         if limits and len(limits) == 2:
             scale = (limits[1] - limits[0]) / (max(array) - min(array))
             offset = limits[0] - min(array)
