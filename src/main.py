@@ -52,6 +52,10 @@ from cam2setpoint import cam2setpoint
 
 WAIT_TIME = 13000 #wait time (ms) to stop program after starting code
 class MotorContainer:
+    """! 
+    This class implements all the motors needed for our death machine.
+    This includes the pitch and yaw motors as well as the servo.
+    """
     def __init__(self):
         #setting up yaw/ panning axis motor
         en_pin =  pyb.Pin(pyb.Pin.cpu.G12, mode = pyb.Pin.OPEN_DRAIN, pull = pyb.Pin.PULL_UP, value=1)
@@ -139,12 +143,10 @@ def camera_handler_fun():
             
             
             
-            
-
 def yaw_motor_fun():
     """!
-    This function controls the yaw motor as part of the second task
-    It runs the motor from 0 degrees to 180 degrees using a proportional controller
+    This function controls the yaw motor.
+    It runs the motor to a set angle using a proportional controller
     """
     t2state = 0
     yaw_err_list = []
@@ -207,8 +209,8 @@ def yaw_motor_fun():
 
 def pitch_motor_fun():
     """!
-    This function controls the yaw motor as part of the second task
-    It runs the motor from 0 degrees to 180 degrees using a proportional controller
+    This function controls the pitch motor (uppy downy)
+    It runs the motor to a desired angle using a proportional controller
     """
     t3state = 0
     pitch_err_list = []
@@ -305,6 +307,10 @@ def trigger_fun():
             raise ValueError(f"Invalid State in Task 4.  Current state is {t4state}")
 
 def timing_handler_fun():
+    """!
+    This is a generator function which defines the timing of tasks so that after
+    the motor turn and shoot, the device returns back to its starting position.
+    """
     t5state = 0
     tstart = utime.ticks_ms()
     tend = tstart
@@ -314,26 +320,26 @@ def timing_handler_fun():
     while True:
         #print("State 5")
         if t5state == 1:
-            curr_time = utime.ticks_ms()
-            if curr_time >= tend:
-                run_motors.put(1)
+            curr_time = utime.ticks_ms() #set wait time
+            if curr_time >= tend: 
+                run_motors.put(1) #put a 1 into the run motors queue
                 tstart = utime.ticks_ms()
-                tend = tstart + WAIT_TIME
+                tend = tstart + WAIT_TIME #define new start time
                 t5state = 2
             yield t5state
         elif t5state == 2:
-            if utime.ticks_ms() > tend:
+            if utime.ticks_ms() > tend: #if 15 seconds has passed (without shooting)
                 print("here")
                 yaw_motor_done.put(1)
                 pitch_motor_done.put(1)
                 t5state = 3
-            if yaw_motor_done.get() == 1 and pitch_motor_done.get() == 1:
-                tstart = utime.ticks_ms()
-                tend = tstart + 1500
+            if yaw_motor_done.get() == 1 and pitch_motor_done.get() == 1: #or both pitch and yaw are complete
+                tstart = utime.ticks_ms()  #set new start time
+                tend = tstart + 1500 #set new end time
                 t5state = 3
             yield t5state
         elif t5state == 3:
-            if returning.get()==1:
+            if returning.get()==1:   #if share: returning ==1
                 yaw_motor_setpoint.put(-180)
                 pitch_motor_setpoint.put(30)
                 if utime.ticks_ms() >= tend:
@@ -355,12 +361,13 @@ if __name__ == "__main__":
     # allocated for state transition tracing, and the application will run out
     # of memory after a while and quit. Therefore, use tracing only for 
     # debugging and set trace to False when it's not needed
-    run_motors = task_share.Share("B", name="Run the motors boolean")
+    run_motors = task_share.Share("B", name="Run the motors boolean") #boolean
     yaw_motor_done = task_share.Share("B", name="Yaw motor reached location boolean")
     pitch_motor_done = task_share.Share("B", name="Pitch motor reached location boolean")
     returning = task_share.Share("B", name="Returning to home boolean")
     yaw_motor_setpoint = task_share.Share("f", name="Yaw motor setpoint")
-    pitch_motor_setpoint = task_share.Share("f", name="Pitch motor setpoint")
+    pitch_motor_setpoint = task_share.Share("f", name="Pitch motor setpoint") #float
+    #clearing shares
     run_motors.put(0)
     yaw_motor_done.put(0)
     pitch_motor_done.put(0)
@@ -377,18 +384,17 @@ if __name__ == "__main__":
                         profile=True, trace=False)
     task5 = cotask.Task(timing_handler_fun, name="Task 5: Timing Handler", priority=10,period=15,
                         profile=True, trace=False)  
-    # adding the tasks to task list, commenting out task3, used for acquiring data for plotting
-    cotask.task_list.append(task1) #add tasks to scheduler list
-    cotask.task_list.append(task2) #add tasks to scheduler list
+    # adding the tasks to task list (the scheduler)
+    cotask.task_list.append(task1) 
+    cotask.task_list.append(task2) 
     cotask.task_list.append(task3)
     cotask.task_list.append(task4)
     cotask.task_list.append(task5)
     
-    
     # Run the memory garbage collector to ensure memory is as defragmented as
     # possible before the real-time scheduler is started
     gc.collect()
-    # Run the scheduler with the chosen scheduling algorithm. Quit if ^C pressed
+    # setting up motor obect
     motors = MotorContainer()
     while True:
         try:

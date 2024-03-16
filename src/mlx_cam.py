@@ -94,7 +94,7 @@ class MLX_Cam:
         return arr
     
     def get_csv(self, array, limits=None):
-         """! 
+        """! 
         Reads the camera data to form the raw data csv of camera data.
         @param array: the bus which the camera is attached 
         @param limits: sets the scale and offset of the array. 
@@ -132,6 +132,11 @@ class MLX_Cam:
     #      @endcode
     #
     def get_image_nonblocking(self):
+        """! 
+        Reads the camera data to get an image in a non blocking way.
+        It returns none until the compelte image has been generate which
+        takes roughly .25-.5 seconds
+        """
 
         # If this is the first recent call, begin the process
         if not self._getting_image:
@@ -152,14 +157,12 @@ class MLX_Cam:
         else:
             self._getting_image = False
             return image
-
-
-## This test function sets up the sensor, then grabs and shows an image in a
-#  terminal every few seconds. By default it shows ASCII art, but it can be
-#  set to show better looking grayscale images in some terminal programs such
-#  as PuTTY. Unfortunately Thonny's terminal won't show the nice grayscale. 
+ 
 def test_MLX_cam():
-
+    """! 
+    This is a test function which shows the readings of the snensor every c
+    couple of second. It is shown in ASCII art.
+    """
     import gc
 
     # The following import is only used to check if we have an STM32 board such
