@@ -1,14 +1,34 @@
+"""!
+@file motor_driver.py
+This file contains the class implementation for powering our servo.
+This file also tests if the servo can function to a setpoint.
+
+@author Jared Sinasohn, Sydney Ulvick, Sean Nakashimo
+@date 3-March-2024
+"""
 from pyb import Pin, Timer
 import utime
 frequency = 50
 class Servo:
+    """! 
+    This class implements a servo. 
+    """
     def __init__(self,servo_pin,timer):
+        """! 
+        Creates a servo driver.
+        @param servo_pin: output pin on GPIO which sends PWM
+        @param timer: timer used to setup PWM
+        """
         self.servo_pin = servo_pin
         self.timer = timer
         self.channel = self.timer.channel(1, Timer.PWM, pin=servo_pin)
         print("creating servo")
 
     def set_servo(self,angle):
+        """! 
+        Sets servo position based on angle.
+        @param angle: output angle, 0-180 degrees
+        """
         # 40KG servo DS3240MG
         # Positions of 0-180
         # PWM range of 500-2500 microseconds
