@@ -1,7 +1,21 @@
+"""!
+@file cam2setpoint.py
+    This file is used to convert the camera readings to a setpoint used
+    for the turret to fire at. It proccesses the thermal data into a centroid.
+@author Sydney Ulvick
+@author Jared Sinasohn
+@author Sean Nakashimo
+@date   2024-March-13 
+"""
 from ulab import numpy as np
 import utime
 # The following code was written by hand in matlab but converted to python using ChatGPT
 def cam2setpoint(im):
+    """! 
+    This class implements the cam for use with our turret.
+    @param im: complete thermal image read from camera
+    """
+    #filtering the noise, setting datum for imaging
     noisefilt = np.array([[0,85,49,85,48,85,55,85,48,85,70,85,61,85,72,85,69,85,85,85,74,85,85,85,85,85,85,85,85,85,85,85],
                             [0,77,32,85,29,74,36,85,46,82,43,85,53,85,52,85,65,85,59,85,66,75,68,85,78,85,67,85,84,85,79,85],
                             [0,85,18,85,21,85,40,85,25,85,58,85,50,85,66,85,54,85,71,85,60,85,85,85,69,85,84,85,78,85,85,85],
