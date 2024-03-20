@@ -10,6 +10,10 @@
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
 <script type="text/javascript" src="cookie.js"></script>
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
@@ -50,6 +54,22 @@ $(function() {
 </script>
 <div id="main-nav"></div>
 </div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function(){initNavTree('index.html',''); initResizable(); });
+/* @license-end */
+</script>
+<div id="doc-content">
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -76,9 +96,9 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This project implements a heat seeking nerf gun turret for the ME 405 term project. The hardware includes an stm32 microcontroller, two dc motors with integrated encoders, a DC servo, and many 3d printed parts. The following files were used to control the project:</p>
-<p>main.py - the main file that runs the cooperative multitasking commands for each of the tasks mlx_cam.py - a script that is used to read camera data off an mlx90640 thermal camera and convert that data to a numpy array cam2setpoint.py - contains the function that performs computer vision computations on the thermal camera image to generate two set points for the yaw and pitch of the turret</p>
+<p><a class="el" href="main_8py.html" title="This is the main file used for operating the thermal camera and turret for the ME 405 term project.">main.py</a> - the main file that runs the cooperative multitasking commands for each of the tasks <a class="el" href="mlx__cam_8py.html" title="This file contains a wrapper that facilitates the use of a Melexis MLX90640 thermal infrared camera f...">mlx_cam.py</a> - a script that is used to read camera data off an mlx90640 thermal camera and convert that data to a numpy array <a class="el" href="cam2setpoint_8py.html" title="This file is used to convert the camera readings to a setpoint used for the turret to fire at.">cam2setpoint.py</a> - contains the function that performs computer vision computations on the thermal camera image to generate two set points for the yaw and pitch of the turret</p>
 <p>subdirectory mlx90640 - contains drivers for the mlx90640 camera, created by Dr. John Ridgely</p>
-<p>subdirectory motor_drivers - contains the drivers for the motors of the nerf turret. The subdirectory contains the following files motor_driver.py - implements a motor driver class to drive an Ametek Pittman motor using PWM servo_driver.py - implements a servo driver class to drive a purchased servo through PWM encoder_reader.py - implements a class to read the built in encoders on the Ametek Pittman motor controller.py - implements a closed loop PID controller to control a generic plant with a generic setpoint, in this cased used by the motor driver and the encoder reader.</p>
+<p>subdirectory motor_drivers - contains the drivers for the motors of the nerf turret. The subdirectory contains the following files <a class="el" href="motor__driver_8py.html" title="This file contains the class implementation for powering an ametek pittman motor.">motor_driver.py</a> - implements a motor driver class to drive an Ametek Pittman motor using PWM <a class="el" href="servo__driver_8py.html" title="This file contains the class implementation for powering our servo.">servo_driver.py</a> - implements a servo driver class to drive a purchased servo through PWM <a class="el" href="encoder__reader_8py.html" title="This file contains the class implementation for reading the values on the ME 405 microcontroller and ...">encoder_reader.py</a> - implements a class to read the built in encoders on the Ametek Pittman motor <a class="el" href="controller_8py.html" title="This file contains the class implementation for controlling a plant based on a sensor.">controller.py</a> - implements a closed loop PID controller to control a generic plant with a generic setpoint, in this cased used by the motor driver and the encoder reader.</p>
 <p>To implement the control of the system, cooperative multitasking was used. Specifically, a cotasking based priority schedule was used to run five tasks that controlled the functions of the turret. The task diagram can be found below.</p>
 <p><img src="taskdiagram.jpg" alt="image" class="inline"/></p>
 <p>Each task required its own finite state machine to control their various states. The finite state machines for each of the tasks can be found below.</p>
@@ -86,9 +106,12 @@ $(function() {
 </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"/>
 </div><!-- contents -->
+</div><!-- doc-content -->
 <!-- start footer part -->
-<hr class="footer"/><address class="footer"><small>
-Generated by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.10.0
-</small></address>
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.10.0 </li>
+  </ul>
+</div>
 </body>
 </html>

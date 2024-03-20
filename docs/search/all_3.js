@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['term_20project_20winter_202024_0',['mecha16 Term Project Winter 2024',['../index.html',1,'']]],
-  ['termproj_1',['ME405-mecha16-W2024-TermProj',['../md__r_e_a_d_m_e.html',1,'']]]
+  ['datanotavailableerror_0',['DataNotAvailableError',['../classmlx90640_1_1_data_not_available_error.html',1,'mlx90640']]],
+  ['detect_5fcamera_1',['detect_camera',['../____init_____8py.html#a51b1ec12e5f9fbc714b59a3d88ddb460',1,'mlx90640']]]
 ];
