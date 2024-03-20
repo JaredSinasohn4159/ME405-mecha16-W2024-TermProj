@@ -20,4 +20,4 @@ To implement the control of the system, cooperative multitasking was used.  Spec
 
 Each task required its own finite state machine to control their various states.  The finite state machines for each of the tasks can be found below.
 
-![image](Notes_240319_212721)
+![image](Notes_240319_212721.jpg)
