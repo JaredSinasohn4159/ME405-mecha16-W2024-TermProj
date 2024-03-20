@@ -11,6 +11,10 @@ Additionally a high level task diagram can be seen below, showing the interactio
 
 ![image](https://github.com/JaredSinasohn4159/ME405-mecha16-W2024-TermProj/assets/156977553/b2dc6569-9172-4f0b-9dd7-2af982d5c07e)
 
+Each of these tasks had their own finite state machines.  These finite state machines can be found below.
+
+![Notes_240319_212721](https://github.com/JaredSinasohn4159/ME405-mecha16-W2024-TermProj/assets/81637028/d604ddaa-7ede-40e4-bc78-3fd56f4f26e5)
+
 
 Reflection:
   One of our biggest issues was allignment between the camera and the panning axis. If we were to repeat the project, we would mount directly to the base of the turret rather than having a seperate mount/ unit. Hardware implementation was also a big takeaway. Having all mechanical components ready to go as fast as possible is necessary for success. Any delays in these parts means less time to implement electronics and debug because there WILL be issues. The use of a voltage regulator is also quite handy and cheap solution for stepping down voltages from a singular source. We used it to get the 12 V DC power supply to a 6.8 V source for our servo since we needed the 12V for both our pitch and panning motors. One thing that worked really well was the machined aluminum panning axis. Having such a high precision part seemed like overkill, but many people had a lot of slopiness in their system which made whatever optimizations in coding useless. Mechanical componenet compliance should be minimized for implementing high precision control systems. 
