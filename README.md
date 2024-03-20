@@ -8,6 +8,7 @@ This project was done as a final project for ME 405 at Cal Poly. The purpose of 
   Coding was done using a cotasking. The tasks were broken up as camera reading, yaw motor, pitch motor, and trigger servo. Furthur details can be seen in the doxygen:
 doxygen link: 
 Additionally a high level task diagram can be seen below, showing the interactions between the camera, both motors, and servo.
+
 ![image](https://github.com/JaredSinasohn4159/ME405-mecha16-W2024-TermProj/assets/156977553/b2dc6569-9172-4f0b-9dd7-2af982d5c07e)
 
 
