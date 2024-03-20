@@ -55,6 +55,11 @@ class MotorContainer:
     """! 
     This class implements all the motors needed for our death machine.
     This includes the pitch and yaw motors as well as the servo.
+    
+    To explain further, this class is really just a dummy class
+    to avoid using a global variable for the motors.  This class
+    is only used to disable each of the motors in the event of a
+    ^c.
     """
     def __init__(self):
         #setting up yaw/ panning axis motor
@@ -400,6 +405,7 @@ if __name__ == "__main__":
         try:
             cotask.task_list.pri_sched()
         except KeyboardInterrupt:
+            #disable all motors
             motors.disable_yaw()
             motors.disable_pitch()
             motors.disable_servo()

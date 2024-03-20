@@ -1,5 +1,5 @@
 """!
-@file motor_driver.py
+@file servo_driver.py
 This file contains the class implementation for powering our servo.
 This file also tests if the servo can function to a setpoint.
 

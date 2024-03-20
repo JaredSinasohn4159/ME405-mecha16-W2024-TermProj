@@ -13,7 +13,12 @@ import utime
 def cam2setpoint(im):
     """! 
     This class implements the cam for use with our turret.
+    It does some computer vision stuff to calculate the location of a
+    person in front of the camera with respect to the field of view
+    of the camera.
     @param im: complete thermal image read from camera
+    @returns X_temp, the angle to aim at in the X direction
+    @returns Y_temp, the angle to aim at in the Y direction
     """
     #filtering the noise, setting datum for imaging
     noisefilt = np.array([[0,85,49,85,48,85,55,85,48,85,70,85,61,85,72,85,69,85,85,85,74,85,85,85,85,85,85,85,85,85,85,85],
@@ -40,17 +45,21 @@ def cam2setpoint(im):
                             [0,55,33,85,38,57,33,85,40,56,38,85,43,47,42,85,54,65,47,85,57,56,44,85,55,53,54,85,65,42,62,79],
                             [0,68,35,73,9,70,35,85,27,85,51,85,38,85,45,85,36,80,57,85,36,80,69,85,46,85,60,85,60,85,85,84],
                             [0,56,12,62,16,36,28,81,28,42,28,76,45,43,33,85,26,35,31,74,27,31,30,66,42,36,40,61,54,24,44,54]])
-    # Hardcoded X-Y planes
+    # Hardcoded X-Y planes to map camera pixels to camera angles
     X_plane = np.array([np.linspace(-27.5, 27.5, 32)] * 24)
     Y_plane = np.array([np.linspace(17.5, -17.5, 24)] * 32).T
+    # Subtract out noise
     boy_temp = im-noisefilt
+    # normalize the filtered image
     boy_temp = boy_temp / np.max(boy_temp) * 255
+    # Threshold the image to create a binary image of only the pixels corresponding to a person
     binboy_temp = boy_temp > 255/2
-    # Heat centroid calc
+    # Heat centroid calc for finding center of the person
     ROI_temp = boy_temp * binboy_temp
     ROIsum_temp = np.sum(ROI_temp)
     X_temp = np.sum(ROI_temp * X_plane) / ROIsum_temp
     Y_temp = np.sum(ROI_temp * Y_plane) / ROIsum_temp
+    # Return the two angles of the camera where the person is in the Field of view
     return X_temp, Y_temp
 if __name__=="__main__":
     noisefilt = np.array([[64,157,82,136,82,133,85,144,72,139,82,131,72,141,95,133,85,136,103,139,92,144,110,146,110,151,123,144,121,162,139,159],
